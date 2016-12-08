@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import argparse
+import textwrap
 
 import vbox.config
 import vbox.error
@@ -174,7 +175,15 @@ def _print_vm_info(vm_config):
     manager = vbox.manager.VMManager(name=name)
     state = manager.get_state()
 
-    print('{}: {} ({})'.format(name, address, state))
+    print(textwrap.dedent("""
+        {name}:
+            Address: {address}
+            State:   {state}
+    """).lstrip().format(
+        name=name,
+        address=address,
+        state=state)
+    )
 
 
 def _add_current_subparser(subparsers):
