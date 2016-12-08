@@ -171,31 +171,43 @@ def _add_list_subparser(subparsers):
         'list',
         help='Lists all currently configured VMs'
     )
+    _add_verbose_flag(parser)
     parser.set_defaults(func=_list)
 
 
-def _list(_):
+def _add_verbose_flag(parser):
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='displays VM details'
+    )
+
+
+def _list(args):
     config = vbox.config.Config()
     for vm_config in config.get_vms():
-        _print_vm_info(vm_config)
+        _print_vm_info(vm_config, verbose=args.verbose)
 
 
-def _print_vm_info(vm_config):
+def _print_vm_info(vm_config, verbose=False):
     name = vm_config['name']
     address = vm_config['address']
 
     manager = vbox.manager.VMManager(name=name)
     state = manager.get_state()
 
-    print(textwrap.dedent("""
-        {name}:
-            Address: {address}
-            State:   {state}
-    """).lstrip().format(
-        name=name,
-        address=address,
-        state=state)
-    )
+    if verbose:
+        print(textwrap.dedent("""
+            {name}:
+                Address: {address}
+                State:   {state}
+        """).lstrip().format(
+            name=name,
+            address=address,
+            state=state)
+        )
+    else:
+        print(name)
 
 
 def _add_current_subparser(subparsers):
@@ -203,12 +215,13 @@ def _add_current_subparser(subparsers):
         'current',
         help='Displays the current VM'
     )
+    _add_verbose_flag(parser)
     parser.set_defaults(func=_display_current)
 
 
-def _display_current(_):
+def _display_current(args):
     config = vbox.config.Config()
-    _print_vm_info(config.get_current_vm())
+    _print_vm_info(config.get_current_vm(), verbose=args.verbose)
 
 
 if __name__ == '__main__':
