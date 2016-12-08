@@ -1,4 +1,5 @@
 """Manages VirtualBox VMs"""
+# PYTHON_ARGCOMPLETE_OK
 
 from __future__ import print_function
 
@@ -23,9 +24,9 @@ def main():
 
 
 def _parse_args():
-    arg_parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__)
 
-    subparsers = arg_parser.add_subparsers()
+    subparsers = parser.add_subparsers()
     _add_connect_subparser(subparsers)
     _add_start_subparser(subparsers)
     _add_stop_subparser(subparsers)
@@ -35,7 +36,18 @@ def _parse_args():
     _add_list_subparser(subparsers)
     _add_current_subparser(subparsers)
 
-    return arg_parser.parse_args()
+    _try_enabling_autocomplete(parser)
+
+    return parser.parse_args()
+
+
+def _try_enabling_autocomplete(parser):
+    try:
+        import argcomplete
+    except ImportError:
+        pass
+    else:
+        argcomplete.autocomplete(parser)
 
 
 def _add_connect_subparser(subparsers):
