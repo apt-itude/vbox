@@ -171,43 +171,39 @@ def _add_list_subparser(subparsers):
         'list',
         help='Lists all currently configured VMs'
     )
-    _add_verbose_flag(parser)
-    parser.set_defaults(func=_list)
-
-
-def _add_verbose_flag(parser):
     parser.add_argument(
         '-v', '--verbose',
         action='store_true',
         help='displays VM details'
     )
+    parser.set_defaults(func=_list)
 
 
 def _list(args):
     config = vbox.config.Config()
     for vm_config in config.get_vms():
-        _print_vm_info(vm_config, verbose=args.verbose)
+        if args.verbose:
+            _print_vm_info(vm_config)
+        else:
+            print(vm_config['name'])
 
 
-def _print_vm_info(vm_config, verbose=False):
+def _print_vm_info(vm_config):
     name = vm_config['name']
     address = vm_config['address']
 
     manager = vbox.manager.VMManager(name=name)
     state = manager.get_state()
 
-    if verbose:
-        print(textwrap.dedent("""
-            {name}:
-                Address: {address}
-                State:   {state}
-        """).lstrip().format(
-            name=name,
-            address=address,
-            state=state)
-        )
-    else:
-        print(name)
+    print(textwrap.dedent("""
+        {name}:
+            Address: {address}
+            State:   {state}
+    """).lstrip().format(
+        name=name,
+        address=address,
+        state=state)
+    )
 
 
 def _add_current_subparser(subparsers):
@@ -215,13 +211,28 @@ def _add_current_subparser(subparsers):
         'current',
         help='Displays the current VM'
     )
-    _add_verbose_flag(parser)
+    parser.add_argument(
+        'details',
+        nargs='?',
+        choices=['name', 'address', 'state', 'verbose'],
+        default='name'
+    )
     parser.set_defaults(func=_display_current)
 
 
 def _display_current(args):
     config = vbox.config.Config()
-    _print_vm_info(config.get_current_vm(), verbose=args.verbose)
+    vm_config = config.get_current_vm()
+
+    if args.details == 'name':
+        print(vm_config['name'])
+    elif args.details == 'address':
+        print(vm_config['address'])
+    elif args.details == 'state':
+        manager = vbox.manager.VMManager(name=vm_config['name'])
+        print(manager.get_state())
+    else:
+        _print_vm_info(vm_config)
 
 
 if __name__ == '__main__':
