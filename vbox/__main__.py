@@ -15,7 +15,7 @@ import vbox.manager
 def main():
     args = _parse_args()
     try:
-        args.func(args)
+        args.run(args)
     except vbox.json_file.JsonFileNotFoundError as err:
         print(str(err))
         print('Run "vm add" to create a config file with a new VM definition')
@@ -64,7 +64,7 @@ def _add_connect_subparser(subparsers):
         '-a', '--address',
         help='address of VM'
     )
-    parser.set_defaults(func=_start_and_connect)
+    parser.set_defaults(run=_start_and_connect)
 
 
 def _start_and_connect(args):
@@ -82,7 +82,7 @@ def _add_start_subparser(subparsers):
         nargs='?',
         help='name of VM'
     )
-    parser.set_defaults(func=_start)
+    parser.set_defaults(run=_start)
 
 
 def _start(args):
@@ -100,7 +100,7 @@ def _add_stop_subparser(subparsers):
         nargs='?',
         help='name of VM'
     )
-    parser.set_defaults(func=_stop)
+    parser.set_defaults(run=_stop)
 
 
 def _stop(args):
@@ -121,7 +121,7 @@ def _add_add_subparser(subparsers):
         'address',
         help='address of VM'
     )
-    parser.set_defaults(func=_add)
+    parser.set_defaults(run=_add)
 
 
 def _add(args):
@@ -141,7 +141,7 @@ def _add_remove_subparser(subparsers):
         'name',
         help='name of VM'
     )
-    parser.set_defaults(func=_remove)
+    parser.set_defaults(run=_remove)
 
 
 def _remove(args):
@@ -158,7 +158,7 @@ def _add_select_subparser(subparsers):
         'name',
         help='name of VM'
     )
-    parser.set_defaults(func=_select)
+    parser.set_defaults(run=_select)
 
 
 def _select(args):
@@ -176,7 +176,7 @@ def _add_list_subparser(subparsers):
         action='store_true',
         help='displays VM details'
     )
-    parser.set_defaults(func=_list)
+    parser.set_defaults(run=_list)
 
 
 def _list(args):
@@ -217,7 +217,7 @@ def _add_current_subparser(subparsers):
         choices=['name', 'address', 'state', 'verbose'],
         default='name'
     )
-    parser.set_defaults(func=_display_current)
+    parser.set_defaults(run=_display_current)
 
 
 def _display_current(args):
