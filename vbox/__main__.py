@@ -64,12 +64,16 @@ def _add_connect_subparser(subparsers):
         '-a', '--address',
         help='address of VM'
     )
+    parser.add_argument(
+        '-u', '--user',
+        help='user with which to connect'
+    )
     parser.set_defaults(run=_start_and_connect)
 
 
 def _start_and_connect(args):
     manager = vbox.manager.VMManager(name=args.name)
-    manager.start_and_connect(address=args.address)
+    manager.start_and_connect(address=args.address, user=args.user)
 
 
 def _add_start_subparser(subparsers):
