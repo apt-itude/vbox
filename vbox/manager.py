@@ -62,7 +62,7 @@ class VMManager(object):
     def start(self):
         """Powers on the VM if it is not already running"""
         if self.is_running():
-            print('VM {} is already running'.format(self.name))
+            print('VM "{}" is already running'.format(self.name))
         else:
             subprocess.check_call(
                 ['VBoxManage', 'startvm', self.name, '--type', 'headless']
@@ -70,13 +70,24 @@ class VMManager(object):
 
     def is_running(self):
         """Returns True if the VM is currently running"""
-        return self.get_state() == 'running'
+        try:
+            return self.get_state() == 'running'
+        except (StateUnavailableError, VBoxManageOutputParseError):
+            return False
 
     def get_state(self):
-        """Returns the VM state as a string"""
-        vm_info = subprocess.check_output(
-            ['VBoxManage', 'showvminfo', '--machinereadable', self.name]
-        )
+        """
+        Returns the VM state as a string
+
+        Raises StateUnavailableError and VBoxManageOutputParseError
+        """
+        try:
+            vm_info = subprocess.check_output(
+                ['VBoxManage', 'showvminfo', '--machinereadable', self.name]
+            )
+        except subprocess.CalledProcessError:
+            raise StateUnavailableError(self.name)
+
         vm_state_match = re.search(
             r'^VMState="(.*)"$',
             vm_info,
@@ -131,17 +142,56 @@ class VMManager(object):
                 success = True
 
         if not success:
-            raise ConnectionError(address, tries)
+            raise ConnectionFailure(address, tries)
 
     def stop(self):
         """Shuts down the VM if it is currently running"""
         if self.is_running():
-            print('Shutting down VM {}'.format(self.name))
+            print('Shutting down VM "{}"...'.format(self.name))
             subprocess.check_call(
                 ['VBoxManage', 'controlvm', self.name, 'acpipowerbutton']
             )
         else:
-            print('VM {} is not running'.format(self.name))
+            print('VM "{}" is not running'.format(self.name))
+
+        self._wait_for_shutdown()
+
+    def _wait_for_shutdown(self, tries=20, retry_interval=0.5):
+        try:
+            state = self.get_state()
+        except (StateUnavailableError, VBoxManageOutputParseError):
+            state = None
+
+        remaining_tries = tries
+        while (state != 'poweroff') and (remaining_tries > 0):
+            time.sleep(retry_interval)
+
+            try:
+                state = self.get_state()
+            except (StateUnavailableError, VBoxManageOutputParseError):
+                state = None
+
+            remaining_tries -= 1
+
+        if state != 'poweroff':
+            raise ShutdownFailure(self.name)
+
+        print('VM "{}" has been successfully shut down'.format(self.name))
+
+    def reboot(self):
+        """Reboots the VM if it is currently running"""
+        self.stop()
+        self.start()
+
+
+class StateUnavailableError(Error):
+
+    """Error getting the state of a VM"""
+
+    def __init__(self, name):
+        super(StateUnavailableError, self).__init__(
+            'Failed to get state for VM {}'.format(name)
+        )
 
 
 class VBoxManageOutputParseError(Error):
@@ -149,11 +199,21 @@ class VBoxManageOutputParseError(Error):
     """Error parsing output from a VBoxManage command"""
 
 
-class ConnectionError(Error):
+class ConnectionFailure(Error):
 
     """Failed to connect to VM"""
 
     def __init__(self, address, tries):
-        super(ConnectionError, self).__init__(
+        super(ConnectionFailure, self).__init__(
             'Failed to connect to {} after {} tries'.format(address, tries)
+        )
+
+
+class ShutdownFailure(Error):
+
+    """Failed to shut down the VM"""
+
+    def __init__(self, name):
+        super(ShutdownFailure, self).__init__(
+            'Failed to shut down VM {}'.format(name)
         )

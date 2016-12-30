@@ -30,6 +30,7 @@ def _parse_args():
     _add_connect_subparser(subparsers)
     _add_start_subparser(subparsers)
     _add_stop_subparser(subparsers)
+    _add_reboot_subparser(subparsers)
     _add_add_subparser(subparsers)
     _add_remove_subparser(subparsers)
     _add_select_subparser(subparsers)
@@ -110,6 +111,24 @@ def _add_stop_subparser(subparsers):
 def _stop(args):
     manager = vbox.manager.VMManager(name=args.name)
     manager.stop()
+
+
+def _add_reboot_subparser(subparsers):
+    parser = subparsers.add_parser(
+        'reboot',
+        help='Reboots a VM'
+    )
+    parser.add_argument(
+        'name',
+        nargs='?',
+        help='name of VM'
+    )
+    parser.set_defaults(run=_reboot)
+
+
+def _reboot(args):
+    manager = vbox.manager.VMManager(name=args.name)
+    manager.reboot()
 
 
 def _add_add_subparser(subparsers):
@@ -234,7 +253,13 @@ def _display_current(args):
         print(vm_config['address'])
     elif args.details == 'state':
         manager = vbox.manager.VMManager(name=vm_config['name'])
-        print(manager.get_state())
+
+        try:
+            state = manager.get_state()
+        except vbox.manager.Error:
+            state = 'unavailable'
+
+        print(state)
     else:
         _print_vm_info(vm_config)
 
